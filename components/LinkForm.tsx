@@ -79,7 +79,9 @@ export default function LinkForm() {
       setPreview(null)
     } catch (error) {
       console.error('保存失败:', error)
-      const errorMsg = error instanceof Error ? error.message : String(error)
+      // Supabase 的错误是个对象，优先取它的 message 字段
+      const errorMsg =
+        (error as { message?: string })?.message || JSON.stringify(error)
       setMessage(`保存失败：${errorMsg}`)
     } finally {
       setSaving(false)

@@ -35,8 +35,10 @@ export default function UploadForm() {
 
     try {
       // 第一步：上传图片到 Supabase Storage
-      // 生成唯一文件名：时间戳 + 原文件名，避免重名覆盖
-      const fileName = `${Date.now()}-${file.name}`
+      // 注意：文件名不能含中文/空格等特殊字符，否则会报 "Invalid key"
+      // 所以这里丢弃原文件名，只保留扩展名（如 .png），前面用时间戳+随机字符保证唯一
+      const ext = file.name.split('.').pop() || 'png'
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('inspirations')  // bucket 名称
@@ -67,8 +69,9 @@ export default function UploadForm() {
       setTitle('')
     } catch (error) {
       console.error('上传失败:', error)
-      // 显示真实的错误信息，方便排查问题
-      const errorMsg = error instanceof Error ? error.message : String(error)
+      // Supabase 的错误是个对象，优先取它的 message 字段
+      const errorMsg =
+        (error as { message?: string })?.message || JSON.stringify(error)
       setMessage(`上传失败：${errorMsg}`)
     } finally {
       setUploading(false)
