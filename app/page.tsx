@@ -74,7 +74,16 @@ export default function Home() {
         {!loading && !error && items.length > 0 && (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
             {items.map((item) => (
-              <InspirationCard key={item.id} inspiration={item} />
+              <InspirationCard
+                key={item.id}
+                inspiration={item}
+                onUpdated={(updated) =>
+                  // 把列表里对应的那条替换成更新后的版本，标签立刻刷新
+                  setItems((prev) =>
+                    prev.map((it) => (it.id === updated.id ? updated : it))
+                  )
+                }
+              />
             ))}
           </div>
         )}
