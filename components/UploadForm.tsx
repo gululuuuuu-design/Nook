@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import TagFields from './TagFields'
+import { TagValues, EMPTY_TAGS } from '../lib/tags'
 
 // 图片上传表单组件
-// 功能：选择本地图片 / 粘贴图片(Ctrl+V) -> 上传到 Supabase Storage -> 保存记录到数据库
+// 功能：选择本地图片 / 粘贴图片(Ctrl+V) -> 打标签 -> 上传到 Supabase Storage -> 保存记录到数据库
 export default function UploadForm() {
   // 状态管理
   const [file, setFile] = useState<File | null>(null)        // 选中的文件
@@ -12,6 +14,7 @@ export default function UploadForm() {
   const [title, setTitle] = useState('')                      // 标题输入
   const [uploading, setUploading] = useState(false)           // 上传中状态
   const [message, setMessage] = useState('')                   // 提示消息
+  const [tags, setTags] = useState<TagValues>(EMPTY_TAGS)     // 三类标签
 
   // 统一处理"选好一张图"这件事：记住文件 + 生成本地预览
   // 选文件上传 和 粘贴上传 都调用它，逻辑只写一份
@@ -87,7 +90,10 @@ export default function UploadForm() {
         .insert({
           image_url: urlData.publicUrl,
           title: title || null,  // 标题可选
-          source_url: null        // 上传的图片没有来源链接
+          source_url: null,       // 上传的图片没有来源链接
+          colors: tags.colors,    // 颜色标签
+          styles: tags.styles,    // 风格标签
+          projects: tags.projects // 项目标签
         })
 
       if (dbError) throw dbError
@@ -97,6 +103,7 @@ export default function UploadForm() {
       setFile(null)
       setPreview(null)
       setTitle('')
+      setTags(EMPTY_TAGS)         // 清空标签
     } catch (error) {
       console.error('上传失败:', error)
       // Supabase 的错误是个对象，优先取它的 message 字段
@@ -157,6 +164,9 @@ export default function UploadForm() {
             focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
+
+      {/* 打标签 */}
+      <TagFields value={tags} onChange={setTags} />
 
       {/* 提交按钮 */}
       <button

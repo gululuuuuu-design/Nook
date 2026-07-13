@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import TagFields from './TagFields'
+import { TagValues, EMPTY_TAGS } from '../lib/tags'
 
 // 链接预览数据结构
 interface LinkPreview {
@@ -11,13 +13,14 @@ interface LinkPreview {
 }
 
 // 链接预览表单组件
-// 功能：粘贴链接 -> 调用 Microlink API 抓取封面 -> 保存到数据库
+// 功能：粘贴链接 -> 调用 Microlink API 抓取封面 -> 打标签 -> 保存到数据库
 export default function LinkForm() {
   const [url, setUrl] = useState('')                          // 输入的链接
   const [preview, setPreview] = useState<LinkPreview | null>(null)  // 预览数据
   const [loading, setLoading] = useState(false)               // 加载状态
   const [saving, setSaving] = useState(false)                 // 保存状态
   const [message, setMessage] = useState('')                  // 提示消息
+  const [tags, setTags] = useState<TagValues>(EMPTY_TAGS)     // 三类标签
 
   // 获取链接预览
   // 使用 Microlink API（免费）抓取网页的标题和封面图
@@ -69,7 +72,10 @@ export default function LinkForm() {
         .insert({
           image_url: preview.image,    // 抓取到的封面图
           title: preview.title,         // 抓取到的标题
-          source_url: preview.url       // 原始链接
+          source_url: preview.url,      // 原始链接
+          colors: tags.colors,          // 颜色标签
+          styles: tags.styles,          // 风格标签
+          projects: tags.projects       // 项目标签
         })
 
       if (error) throw error
@@ -77,6 +83,7 @@ export default function LinkForm() {
       setMessage('保存成功！')
       setUrl('')
       setPreview(null)
+      setTags(EMPTY_TAGS)               // 清空标签
     } catch (error) {
       console.error('保存失败:', error)
       // Supabase 的错误是个对象，优先取它的 message 字段
@@ -134,6 +141,9 @@ export default function LinkForm() {
           </div>
         </div>
       )}
+
+      {/* 打标签（预览出来后才显示） */}
+      {preview && <TagFields value={tags} onChange={setTags} />}
 
       {/* 保存按钮 */}
       {preview && (

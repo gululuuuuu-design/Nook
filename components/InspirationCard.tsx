@@ -10,10 +10,20 @@ export interface Inspiration {
   title: string | null
   source_url: string | null
   created_at: string
+  colors: string[] | null
+  styles: string[] | null
+  projects: string[] | null
 }
 
 export default function InspirationCard({ inspiration }: { inspiration: Inspiration }) {
-  // 卡片主体内容（图片 + 标题）
+  // 把三类标签合并成一个列表，方便统一显示
+  const allTags = [
+    ...(inspiration.colors || []),
+    ...(inspiration.styles || []),
+    ...(inspiration.projects || []),
+  ]
+
+  // 卡片主体内容（图片 + 标题 + 标签）
   const content = (
     <div className="mb-4 break-inside-avoid overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
       {/* 封面图：w-full 让它填满列宽，h-auto 保持原比例（这就是瀑布流高低错落的关键） */}
@@ -22,10 +32,25 @@ export default function InspirationCard({ inspiration }: { inspiration: Inspirat
         alt={inspiration.title || '灵感'}
         className="w-full h-auto block"
       />
-      {/* 标题（如果有） */}
-      {inspiration.title && (
+      {/* 标题 + 标签（有内容才显示这块） */}
+      {(inspiration.title || allTags.length > 0) && (
         <div className="p-3">
-          <p className="text-sm text-gray-800">{inspiration.title}</p>
+          {inspiration.title && (
+            <p className="text-sm text-gray-800">{inspiration.title}</p>
+          )}
+          {/* 标签小圆片 */}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {allTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
