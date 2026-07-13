@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 // 图片上传表单组件
-// 功能：选择本地图片 -> 上传到 Supabase Storage -> 保存记录到数据库
+// 功能：选择本地图片 / 粘贴图片(Ctrl+V) -> 上传到 Supabase Storage -> 保存记录到数据库
 export default function UploadForm() {
   // 状态管理
   const [file, setFile] = useState<File | null>(null)        // 选中的文件
@@ -13,17 +13,47 @@ export default function UploadForm() {
   const [uploading, setUploading] = useState(false)           // 上传中状态
   const [message, setMessage] = useState('')                   // 提示消息
 
-  // 处理文件选择
-  // 当用户选择图片时，生成本地预览
+  // 统一处理"选好一张图"这件事：记住文件 + 生成本地预览
+  // 选文件上传 和 粘贴上传 都调用它，逻辑只写一份
+  const selectFile = (selectedFile: File) => {
+    setFile(selectedFile)
+    // URL.createObjectURL 创建一个临时 URL 用于预览
+    // 这个 URL 只在本地有效，不会上传到服务器
+    setPreview(URL.createObjectURL(selectedFile))
+    setMessage('')
+  }
+
+  // 处理文件选择（点"选择图片"按钮时）
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      setFile(selectedFile)
-      // URL.createObjectURL 创建一个临时 URL 用于预览
-      // 这个 URL 只在本地有效，不会上传到服务器
-      setPreview(URL.createObjectURL(selectedFile))
+      selectFile(selectedFile)
     }
   }
+
+  // 监听整个页面的"粘贴"动作（Ctrl+V）
+  // 只要剪贴板里有图片，就自动拿来当作要上传的图
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      // 遍历剪贴板内容，找出第一张图片
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const pastedFile = item.getAsFile()
+          if (pastedFile) {
+            selectFile(pastedFile)
+          }
+          break
+        }
+      }
+    }
+
+    // 挂上监听；组件卸载时记得移除，避免重复监听
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [])
 
   // 处理表单提交
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +126,10 @@ export default function UploadForm() {
             file:bg-blue-50 file:text-blue-700
             hover:file:bg-blue-100"
         />
+        {/* 粘贴提示：告诉用户也可以直接 Ctrl+V */}
+        <p className="mt-2 text-xs text-gray-400">
+          或直接按 Ctrl+V 粘贴复制好的图片
+        </p>
       </div>
 
       {/* 图片预览 */}
