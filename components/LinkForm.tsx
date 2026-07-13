@@ -37,13 +37,16 @@ export default function LinkForm() {
       const data = await response.json()
 
       if (data.status === 'success' && data.data) {
+        // 有些网站（如 Pinterest）抓不到封面图，此时允许没有图片也能保存
         setPreview({
           title: data.data.title || '无标题',
           image: data.data.image?.url || data.data.logo?.url || '',
           url: url
         })
       } else {
-        setMessage('无法获取链接预览，请检查链接是否正确')
+        // 显示 Microlink 返回的具体原因
+        const reason = data.message || data.status || '未知原因'
+        setMessage(`无法获取链接预览（${reason}）。这个网站可能不允许抓取，可改用"上传图片"。`)
       }
     } catch (error) {
       console.error('获取预览失败:', error)
@@ -76,7 +79,8 @@ export default function LinkForm() {
       setPreview(null)
     } catch (error) {
       console.error('保存失败:', error)
-      setMessage('保存失败，请重试')
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      setMessage(`保存失败：${errorMsg}`)
     } finally {
       setSaving(false)
     }

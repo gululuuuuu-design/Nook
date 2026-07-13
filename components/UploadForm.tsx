@@ -67,7 +67,9 @@ export default function UploadForm() {
       setTitle('')
     } catch (error) {
       console.error('上传失败:', error)
-      setMessage('上传失败，请重试')
+      // 显示真实的错误信息，方便排查问题
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      setMessage(`上传失败：${errorMsg}`)
     } finally {
       setUploading(false)
     }
